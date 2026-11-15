@@ -1,109 +1,238 @@
-Coverless Steganography Using Stable Diffusion
-Introduction
-Steganography is the technique of hiding secret information inside an ordinary-looking file, such as an image, audio clip, or video. Unlike cryptography, which protects the content of a message by making it unreadable, steganography aims to conceal the very existence of the message.
 
-In traditional image steganography, information is embedded by modifying an existing cover image. These modifications can introduce small changes in pixel values, which may be detected by steganalysis techniques.
+# Coverless Steganography Using Stable Diffusion
 
-Coverless steganography takes a different approach. Instead of depending on a pre-existing cover image, it uses image selection, transformation, or generation techniques to create or identify a carrier that represents the secret information. The goal is to make covert communication less noticeable while preserving the visual appearance of the carrier.
-About This Project
-In this project, I explore a coverless image steganography approach that uses Stable Diffusion to generate a carrier image and pixel-level processing to embed secret information.
+## Introduction
 
-The workflow starts by generating an image from a text prompt. The secret message is converted into binary data, and the generated image is processed in 3×3 pixel blocks. In the described embedding method, selected pixel values in the red channel are compared using a parity calculation. If the calculated parity does not match the message bit, a small pixel-value adjustment is made.
+Steganography is the technique of hiding secret information inside ordinary digital files such as images, audio, and videos. Unlike cryptography, which converts information into an unreadable format, steganography focuses on hiding the existence of the secret message itself.
 
-At the receiving end, the same pixel positions and parity calculation are used to extract the hidden bitstream. The recovered data is then converted back into its original representation.
+Traditional image steganography modifies existing images to embed confidential information. These modifications may introduce detectable changes in pixel values, which can potentially be identified using steganalysis techniques.
 
-The project also discusses Integer Wavelet Transform (IWT), image-channel processing, Base64 representation, and image-quality evaluation using PSNR and SSIM.
-Terminology note: The publication describes the work as coverless steganography. Its detailed pixel-embedding procedure also makes small changes to selected pixels in the generated carrier image. I retain the terminology used in the paper while describing that implementation detail transparently.
+**Coverless Steganography** introduces an alternative approach in which secret information is represented through image selection, transformation, or generation rather than relying exclusively on modifying an existing cover image. This approach aims to make hidden communication less noticeable.
 
-How It Works
-1. Generate a carrier image
-A text prompt is provided to Stable Diffusion to generate a natural-looking image. The paper uses the prompt "A running horse" as an example and describes a 768 × 768 carrier image.
-2. Prepare the secret data
-The secret message is converted into a binary sequence. For secret-image data, the described workflow also uses Base64 representation so the image bytes can be represented as text before conversion to binary.
-3. Embed the secret data
-The generated image is separated into its RGB channels. The red channel is traversed in 3×3 pixel blocks.
+## About the Project
 
-For each block, two pixel positions are selected:
+In this project, I explore an AI-based coverless image steganography approach using **Stable Diffusion, Integer Wavelet Transform (IWT), and pixel-based parity encoding** to achieve secure covert communication.
+
+The proposed approach generates a carrier image using Stable Diffusion and embeds secret information through image-processing techniques.
+
+The generated image is divided into 3×3 pixel blocks. Selected pixel values from the red channel are compared using a parity-based encoding mechanism to represent binary data.
+
+If the calculated parity does not match the corresponding secret message bit, a small adjustment is made to the selected pixel value.
+
+At the receiver's end, the same pixel positions and parity calculations are used to extract the hidden binary information and reconstruct the original secret data.
+
+The project also incorporates encryption, Base64 encoding, image processing, and image-quality evaluation to examine the effectiveness of the proposed approach.
+
+> **Note:** Although the research is presented as coverless steganography, the described pixel-level embedding procedure makes small modifications to selected pixels of the generated carrier image.
+
+## Key Features
+
+- AI-generated carrier images using Stable Diffusion.
+- Coverless steganography-based communication approach.
+- Secret message conversion into binary format.
+- 3×3 pixel block-based data embedding.
+- Pixel-difference parity encoding.
+- Integer Wavelet Transform (IWT) for image processing.
+- Base64 encoding and decoding.
+- Secret data extraction and reconstruction.
+- Image-quality evaluation using PSNR and SSIM.
+- Secure communication using encryption techniques.
+
+## Project Workflow
+
+### 1. Carrier Image Generation
+
+Stable Diffusion generates a natural-looking image using a user-defined text prompt.
+
+Example prompt:
+
+```text
+A running horse
+```
+
+The generated image is used as the carrier image for the embedding process.
+
+### 2. Secret Data Preprocessing
+
+The secret message or image is converted into a suitable binary representation.
+
+The preprocessing stage involves:
+
+- Reading the secret information.
+- Applying encryption.
+- Converting image data into Base64 representation when applicable.
+- Converting the resulting data into binary format.
+
+### 3. Image Processing and Data Embedding
+
+The generated carrier image is separated into RGB channels.
+
+The red channel is divided into 3×3 pixel blocks.
+
+For every block, two pixel positions are selected:
+
+```python
 p1 = R[j + 2, i]
 p2 = R[j + 1, i + 1]
-The bit represented by the pixel pair is calculated using:
+```
+
+The absolute difference between these pixel values is calculated.
+
+**Parity Calculation:**
+
+```python
 bit = abs(p1 - p2) % 2
-- An even absolute difference represents 0.
-- An odd absolute difference represents 1.
-- If the calculated bit differs from the current secret bit, one selected pixel is adjusted by +1 or -1 to obtain the required parity.
-After processing, the RGB channels are merged to create the stego-image.
-4. Extract the secret data
-The receiver loads the stego-image and separates its RGB channels. The same 3×3 block traversal and pixel positions are used to calculate the parity bits.
+```
 
-The extracted bits are grouped into bytes and converted back into the message representation. For secret-image data, the Base64 content is decoded into image bytes and reconstructed as an image.
-5. Evaluate the output
-The publication evaluates the method using:
-- Embedding efficiency (bpp): amount of embedded data relative to image size.
-- Data recovery precision: proportion of correctly recovered bits.
-- PSNR: measures pixel-level image distortion.
-- SSIM: measures structural similarity between images.
-Technologies and Concepts
-- Python – implementation environment
-- Stable Diffusion – carrier image generation
-- OpenCV – image loading, channel processing, and reconstruction
-- PyWavelets – wavelet-transform operations
-- Integer Wavelet Transform (IWT) – image-domain processing discussed in the method
-- Base64 – representation of secret image bytes
-- Google Colab with GPU support – environment described for implementation
-Results Reported in the Publication
-The following values are taken from the paper and are included here as reported results. They have not been independently reproduced in this repository.
-Image dimension	Embedding level	PSNR	SSIM
-768 × 768	100%	51.61 dB	0.99
-768 × 768	80%	50.94 dB	0.99
-768 × 768	50%	47.70 dB	0.99
-768 × 768	20%	46.52 dB	0.99
-768 × 768	1%	47.25 dB	0.99
-1000 × 1000	100%	34.95 dB	0.97
-2000 × 2000	100%	40.33 dB	0.98
+The parity represents the binary information:
 
+- Even difference → 0
+- Odd difference → 1
 
-The paper also lists the following payload capacities:
-Image dimension	Payload capacity
-768 × 768	1,769,472 bits
-1000 × 1000	3,000,000 bits
-2000 × 2000	12,000,000 bits
+If the calculated parity differs from the secret message bit, one selected pixel value is adjusted by +1 or -1.
 
+This process continues until the secret binary data is embedded.
 
-Repository Structure
-coverless-steganography-stable-diffusion/
+### 4. Stego Image Generation
+
+After embedding the secret information, the modified RGB channels are merged to generate the final stego-image.
+
+The generated image is saved and transmitted to the receiver.
+
+### 5. Secret Data Extraction
+
+The receiver processes the stego-image using the same extraction mechanism.
+
+The extraction process involves:
+
+1. Loading the stego-image.
+2. Separating RGB channels.
+3. Extracting the red channel.
+4. Dividing the image into 3×3 pixel blocks.
+5. Calculating pixel-difference parity.
+6. Recovering the binary sequence.
+7. Converting binary data into its original representation.
+8. Decoding Base64 data when applicable.
+9. Reconstructing the original secret image or message.
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Python | Core programming language |
+| Stable Diffusion | AI-based carrier image generation |
+| OpenCV | Image processing and manipulation |
+| PyWavelets | Wavelet transformations |
+| Integer Wavelet Transform | Image-domain processing |
+| NumPy | Numerical and array operations |
+| Base64 | Binary data representation |
+| Fernet Encryption | Secret data encryption |
+| Google Colab | Development and GPU execution |
+| Matplotlib | Image visualization |
+
+## Experimental Results
+
+The proposed approach was evaluated using image-quality metrics such as Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index (SSIM).
+
+### PSNR and SSIM Results
+
+The following results are reported in the IEEE publication.
+
+| Image Dimension | Embedding (%) | PSNR (dB) | SSIM |
+|---|---:|---:|---:|
+| 768 × 768 | 100 | 51.61 | 0.99 |
+| 768 × 768 | 80 | 50.94 | 0.99 |
+| 768 × 768 | 50 | 47.70 | 0.99 |
+| 768 × 768 | 20 | 46.52 | 0.99 |
+| 768 × 768 | 1 | 47.25 | 0.99 |
+| 1000 × 1000 | 100 | 34.95 | 0.97 |
+| 1000 × 1000 | 80 | 35.96 | 0.97 |
+| 2000 × 2000 | 100 | 40.33 | 0.98 |
+
+### Payload Capacity
+
+| Image Dimension | Payload Capacity |
+|---|---:|
+| 768 × 768 | 1,769,472 bits |
+| 1000 × 1000 | 3,000,000 bits |
+| 2000 × 2000 | 12,000,000 bits |
+
+*Note: These values are taken from the published research paper and have not been independently reproduced in this repository.*
+
+## Applications
+
+- Secure communication.
+- Confidential data transmission.
+- Digital information protection.
+- Image-based covert communication.
+- Research in AI-driven steganography.
+- Cybersecurity and information hiding.
+
+## Limitations and Future Scope
+
+Although the proposed approach demonstrates promising image-quality results, several areas can be explored further:
+
+- Improving resistance against advanced steganalysis.
+- Increasing embedding capacity.
+- Improving extraction accuracy.
+- Testing robustness against image compression and resizing.
+- Exploring advanced diffusion models.
+- Optimizing computational efficiency.
+- Improving encryption and authentication mechanisms.
+
+## Publication
+
+This project is associated with the following IEEE conference publication:
+
+**Enhancing CyberSecurity Through Coverless Steganography with Diffusion Based Image Synthesis**
+
+Published research paper:
+
+[Read the Research Paper on IEEE Xplore](https://ieeexplore.ieee.org/document/11484830)
+
+The publication presents the proposed methodology, implementation workflow, algorithms, and experimental evaluation of the research.
+
+## Repository Structure
+
+```text
+Coverless-Steganography-Stable-Diffusion/
+│
 ├── README.md
-├── .gitignore
-├── requirements.txt
+│
+├── src/
+│   ├── image_generation.py
+│   ├── preprocessing.py
+│   ├── encryption.py
+│   ├── embedding.py
+│   ├── extraction.py
+│   └── evaluation.py
+│
+├── notebooks/
+│   └── steganography_implementation.ipynb
+│
+├── results/
+│   ├── cover_image/
+│   ├── stego_image/
+│   └── extracted_image/
+│
 ├── docs/
-│   └── paper-reference.md
-└── src/
-    └── README.md
-Setup
-This repository currently contains the project explanation and research reference. The executable implementation and a tested dependency lockfile have not yet been added.
+│   └── research_paper.pdf
+│
+└── requirements.txt
+```
 
-To prepare a local Python environment:
-python -m venv .venv
+*The structure above is a suggested organization for the implementation.*
 
-# Windows
-.venv\Scripts\activate
+## Conclusion
 
-# macOS / Linux
-source .venv/bin/activate
+This project explores the combination of generative AI and image steganography for secure covert communication.
 
-pip install -r requirements.txt
-Stable Diffusion setup may require additional model configuration, hardware resources, and version-specific dependencies.
-Notes and Limitations
-- The metrics in this README are reported in the publication; they are not independent benchmark results from this repository.
-- The method's robustness against resizing, compression, cropping, filtering, and other image transformations requires further testing.
-- Steganography and encryption solve different problems. Sensitive payloads should be encrypted with a vetted cryptographic library before embedding.
-- Small visual changes do not by themselves prove that an image is undetectable by modern steganalysis.
-- The detailed embedding procedure described in the paper adjusts pixel values, even though the overall approach is presented as coverless steganography.
-Publication
-This project is based on the following IEEE conference publication:
+By integrating Stable Diffusion-based image generation with pixel-level parity encoding, Integer Wavelet Transform, and encryption techniques, the proposed approach investigates an alternative way of embedding and recovering confidential information within digital images.
 
-“Enhancing CyberSecurity Through Coverless Steganography with Diffusion Based Image Synthesis”
-- IEEE Xplore: https://ieeexplore.ieee.org/document/11484830
-- Publication record: View on IEEE Xplore
-Please refer to the IEEE Xplore record for the definitive bibliographic metadata, including the conference details, publication year, page range, and DOI.
-License
-No open-source license has been selected for this repository. Unless a license is added, the source and documentation remain subject to their applicable copyright terms.
+The research highlights the potential of generative AI in cybersecurity and provides a foundation for further exploration of AI-driven steganography techniques.
+
+---
+
+**Research Area:** Artificial Intelligence | Cybersecurity | Image Processing | Steganography | Generative AI
+
+**Publication:** [IEEE Xplore](https://ieeexplore.ieee.org/document/11484830)
